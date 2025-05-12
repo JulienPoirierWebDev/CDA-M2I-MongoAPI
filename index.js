@@ -1,7 +1,7 @@
 import 'dotenv/config';
 
 import express from 'express';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 
 const app = express();
 app.use(express.json());
@@ -66,6 +66,57 @@ async function ajoutFilm(film) {
 	}
 }
 
+function removeBlankAttributes(obj) {
+	const result = {};
+	for (const key in obj) {
+		if (obj[key] !== null && obj[key] !== undefined) {
+			result[key] = obj[key];
+		}
+	}
+	return result;
+}
+
+async function updateOneFilm(id, data) {
+	let mongoClient;
+	try {
+		mongoClient = await connectToMongoDB(process.env.DB_URI);
+		const m2iDb = mongoClient.db('m2i');
+		const films = m2iDb.collection('films');
+
+		const updateStatus = await films.updateOne(
+			{ _id: ObjectId.createFromHexString(id) },
+			{ $set: data }
+		);
+		console.log(updateStatus);
+	} catch (error) {
+		console.log(error);
+
+		return { error: true };
+	} finally {
+		mongoClient.close();
+	}
+}
+
+async function deleteOneFilm(id) {
+	let mongoClient;
+	try {
+		mongoClient = await connectToMongoDB(process.env.DB_URI);
+		const m2iDb = mongoClient.db('m2i');
+		const films = m2iDb.collection('films');
+
+		const status = await films.deleteOne({
+			_id: ObjectId.createFromHexString(id),
+		});
+		return status;
+	} catch (error) {
+		console.log(error);
+
+		return { error: true };
+	} finally {
+		mongoClient.close();
+	}
+}
+
 // CRUD
 
 // Create
@@ -100,6 +151,54 @@ app.get('/films', async (req, res) => {
 
 	const tousLesFilms = await getFilms(page);
 	res.json(tousLesFilms);
+});
+
+app.put('/films/:id', async (req, res) => {
+	const id = req.params.id;
+
+	const { nom, realisateur, types, date, duree, resume } = req.body;
+	const update = removeBlankAttributes({
+		nom,
+		realisateur,
+		types,
+		date,
+		duree,
+		resume,
+	});
+
+	const status = await updateOneFilm(id, update);
+
+	if (status?.error) {
+		return res
+			.status(500)
+			.json({ error: true, message: "Le film n'a pas été modifié" });
+	} else {
+		res.json({
+			message: 'Le film a été modifié',
+		});
+	}
+});
+
+app.delete('/films/:id', async (req, res) => {
+	const id = req.params.id;
+
+	const status = await deleteOneFilm(id);
+
+	if (status?.error) {
+		return res
+			.status(500)
+			.json({ error: true, message: "Le film n'a pas été supprimé" });
+	} else {
+		if (status.deletedCount > 0) {
+			res.json({
+				message: 'Le film a été supprimé',
+			});
+		} else {
+			res.status(404).json({
+				message: "Le film n'a pas été supprimé, merci de vérifier l'id",
+			});
+		}
+	}
 });
 
 app.listen(process.env.PORT, () => {
