@@ -1,70 +1,24 @@
 import 'dotenv/config';
 
 import express from 'express';
-import { MongoClient, ObjectId } from 'mongodb';
+import { MongoClient } from 'mongodb';
+import {
+	getFilms,
+	ajoutFilm,
+	updateOneFilm,
+	deleteOneFilm,
+} from './models/films.js';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-export async function connectToMongoDB(uri) {
-	let mongoClient;
 
-	try {
-		mongoClient = new MongoClient(uri);
-		console.log('Connecting to MongoDB...');
-		await mongoClient.connect();
-		console.log('Successfully connected to MongoDB!');
-
-		return mongoClient;
-	} catch (error) {
-		console.error('Connection to MongoDB failed!', error);
-		process.exit();
-	}
-}
 
 app.get('/', (req, res) => {
 	res.send('Hello World!');
 });
 
-app.get('/mongodb', (req, res) => {
-	res.send("J'aime trop mongodb <3 !");
-});
-
-async function getFilms(page = 1) {
-	let mongoClient;
-	let tousLesFilms;
-	const numbToSkip = page - 1;
-	const numbToLimit = 10;
-	try {
-		mongoClient = await connectToMongoDB(process.env.DB_URI);
-		const m2iDb = mongoClient.db('m2i');
-		const films = m2iDb.collection('films');
-		tousLesFilms = await films
-			.find()
-			.skip(numbToLimit * numbToSkip)
-			.limit(numbToLimit)
-			.toArray();
-	} finally {
-		mongoClient.close();
-	}
-
-	return tousLesFilms;
-}
-
-async function ajoutFilm(film) {
-	let mongoClient;
-	try {
-		mongoClient = await connectToMongoDB(process.env.DB_URI);
-		const m2iDb = mongoClient.db('m2i');
-		const films = m2iDb.collection('films');
-		await films.insertOne({ ...film, date: new Date(film.date) });
-	} catch (error) {
-		return { error: true };
-	} finally {
-		mongoClient.close();
-	}
-}
 
 function removeBlankAttributes(obj) {
 	const result = {};
@@ -76,50 +30,6 @@ function removeBlankAttributes(obj) {
 	return result;
 }
 
-async function updateOneFilm(id, data) {
-	let mongoClient;
-	try {
-		mongoClient = await connectToMongoDB(process.env.DB_URI);
-		const m2iDb = mongoClient.db('m2i');
-		const films = m2iDb.collection('films');
-
-		const updateStatus = await films.updateOne(
-			{ _id: ObjectId.createFromHexString(id) },
-			{ $set: data }
-		);
-		console.log(updateStatus);
-	} catch (error) {
-		console.log(error);
-
-		return { error: true };
-	} finally {
-		mongoClient.close();
-	}
-}
-
-async function deleteOneFilm(id) {
-	let mongoClient;
-	try {
-		mongoClient = await connectToMongoDB(process.env.DB_URI);
-		const m2iDb = mongoClient.db('m2i');
-		const films = m2iDb.collection('films');
-
-		const status = await films.deleteOne({
-			_id: ObjectId.createFromHexString(id),
-		});
-		return status;
-	} catch (error) {
-		console.log(error);
-
-		return { error: true };
-	} finally {
-		mongoClient.close();
-	}
-}
-
-// CRUD
-
-// Create
 app.post('/films', async (req, res) => {
 	const film = req.body;
 
