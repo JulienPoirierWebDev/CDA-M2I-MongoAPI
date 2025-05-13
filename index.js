@@ -1,29 +1,25 @@
 import 'dotenv/config';
 
 import express from 'express';
-import {
-	createOneMovie,
-	deleteOneMovieById,
-	getOneMovieById,
-	getOneMoviePage,
-} from './controllers/filmsController.js';
+
+import filmsRouter from './routers/filmsRouter.js';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Si API ouverte : documentation. Si API fermé : 404
 app.get('/', (req, res) => {
 	res.send('Hello World!');
 });
 
-app.post('/films', createOneMovie);
+app.use('/films', filmsRouter);
 
-// récupère une page de films avec pagination
-app.get('/films', getOneMoviePage);
+app.get('/salut', (req, res) => res.send('coucou'));
 
-app.put('/films/:id', getOneMovieById);
-
-app.delete('/films/:id', deleteOneMovieById);
+app.use((req, res) => {
+	res.json({ message: 'page 404' });
+});
 
 app.listen(process.env.PORT, () => {
 	console.log(`serveur lancé sur le port ${process.env.PORT}`);

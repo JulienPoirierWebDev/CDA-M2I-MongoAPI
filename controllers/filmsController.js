@@ -1,3 +1,10 @@
+import {
+	getFilms,
+	ajoutFilm,
+	updateOneFilm,
+	deleteOneFilm,
+} from '../models/filmsModel.js';
+
 const createOneMovie = async (req, res) => {
 	const film = req.body;
 
@@ -24,8 +31,6 @@ const createOneMovie = async (req, res) => {
 
 const getOneMoviePage = async (req, res) => {
 	const page = req.query.page;
-	console.log(page);
-
 	const tousLesFilms = await getFilms(page);
 	res.json(tousLesFilms);
 };

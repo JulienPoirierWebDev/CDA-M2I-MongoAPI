@@ -5,7 +5,7 @@ async function getFilms(page = 1) {
 	let mongoClient;
 	let tousLesFilms;
 	const numbToSkip = page - 1;
-	const numbToLimit = 10;
+	const numbToLimit = 20;
 	try {
 		mongoClient = await connectToMongoDB(process.env.DB_URI);
 		const m2iDb = mongoClient.db('m2i');
