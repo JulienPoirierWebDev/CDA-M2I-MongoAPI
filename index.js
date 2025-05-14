@@ -17,6 +17,10 @@ app.use('/films', filmsRouter);
 
 app.get('/salut', (req, res) => res.send('coucou'));
 
+app.get("/pokemons/plus-grand", () => {
+	
+})
+
 app.use((req, res) => {
 	res.json({ message: 'page 404' });
 });
